@@ -1,1 +1,30 @@
+import mysql.connector
+import os
 
+# Replace these values with your actual RDS endpoint, port, username, and password
+db_endpoint = "airhockeydb1.cluster-ckuqf4ujr5sb.us-east-1.rds.amazonaws.com"
+db_port = 3306
+db_username = "jhcairhockey"
+db_password = "jhcgroup"
+db_name = "airhockeydb1"
+
+# Connect to the database
+try:
+    with mysql.connector.connect(
+        host=db_endpoint,
+        port=db_port,
+        user=db_username,
+        password=db_password,
+        database=db_name
+    ) as connection:
+        cursor = connection.cursor()
+
+        # Example: Perform a SELECT query
+        cursor.execute("SELECT * FROM airhockeytable")
+        result = cursor.fetchall()
+        print("Fetched data:", result)
+
+        # Add your database operations here
+
+except mysql.connector.Error as err:
+    print(f"Error: {err}")

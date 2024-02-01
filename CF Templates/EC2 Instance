@@ -3,8 +3,8 @@ Resources:
   MyEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      ImageId: ami-08fd79c2e04c42ce8
-      InstanceType: t2.micro
+      ImageId: ami-0133fb3dded749b65
+      InstanceType: t2.nano
       UserData:
         Fn::Base64: |
           #!/bin/bash

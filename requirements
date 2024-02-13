@@ -1,0 +1,5 @@
+python 8.8.8 or below proven to work
+PYTHON LIBRARIES
+PySimpleGUIWeb
+mysql.connector
+Keyboard

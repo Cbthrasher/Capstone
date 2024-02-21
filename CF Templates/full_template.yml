@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0133fb3dded749b65
+      InstanceType: t2.nano
+      KeyName: Capstone
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref WebSecurityGroup
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y curl wget file tar bzip2 gzip unzip bsdmainutils python3 python3-pip util-linux ca-certificates binutils bc jq tmux netcat           
+          wget https://github.com/Cbthrasher/Capstone/archive/refs/heads/main.zip
+          unzip main.zip
+          ls -al   # Add this line to see the contents of the current directory
+          cd Capstone-main
+          pip3 install PySimpleGUIWeb mysql.connector Keyboard
+          pip3 install --upgrade remi
+          python3 pong_game.py
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          
+
+Outputs:
+  InstanceId:
+    Description: "InstanceId of the newly created EC2 instance"
+    Value: !Ref MyEC2Instance

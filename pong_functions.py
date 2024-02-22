@@ -1,6 +1,7 @@
 from pong_classes import Ball, Scores, GAMEPLAY_SIZE
 import mysql.connector
 from mysql.connector import Error
+import boto3
 
 def check_ball_exit(ball: Ball, scores: Scores):
     if ball.current_x <= 0:
@@ -10,6 +11,23 @@ def check_ball_exit(ball: Ball, scores: Scores):
         scores.increment_player_1()
         ball.restart()
 
+def get_db_endpoint(stack_name):
+    client = boto3.client('cloudformation')
+    response = client.describe_stacks(StackName=stack_name)
+    outputs = response['Stacks'][0]['Outputs']
+    for output in outputs:
+        if output['OutputKey'] == 'DBEndpoint':
+            return output['OutputValue']
+    raise ValueError("DBEndpoint not found in stack outputs")
+
+stack_name = 'pongcapstack'
+
+try:
+    db_endpoint = get_db_endpoint(stack_name)
+    print("Database Endpoint:", db_endpoint)
+except Exception as e:
+    print(f"Error: {e}")
+
 
 def goto_menu(window):
     window['-MAIN_MENU-'].Visible=True
@@ -18,8 +36,8 @@ def goto_menu(window):
 def create_db_connection():
     try:
         connection = mysql.connector.connect(
-            host='database-2.cluster-ro-cbwiay2sero9.us-east-1.rds.amazonaws.com',  # Replace with RDS instance's endpoint
-            database='database-2',
+            host=db_endpoint,  
+            database='stackdb',
             user='adminadmin',
             password='passpass'
         )

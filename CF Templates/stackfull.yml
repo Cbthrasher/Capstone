@@ -5,44 +5,70 @@ Parameters:
     Type: String
     Default: Capstone
     Description: Name of the EC2 Key Pair
+  DBName:
+    Description: The database name
+    Type: String
+    Default: pongdb
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric
+      characters.
+  DBUsername:
+    Description: The database admin account username
+    Type: String
+    Default: adminadmin
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric
+      characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: The database admin account password
+    Type: String
+    Default: passpass
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: must contain only alphanumeric characters.
+
 
 Resources:
-  MyEC2Role:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: "/"
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
-        - 'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess'
-
-  EC2InstanceProfile:
-    Type: 'AWS::IAM::InstanceProfile'
-    Properties:
-      Path: "/"
-      Roles:
-        - Ref: MyEC2Role
-
   MyEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-0133fb3dded749b65
       InstanceType: t2.nano
-      IamInstanceProfile:
-        Ref: EC2InstanceProfile
       KeyName: 
         Ref: KeyPairName
       SecurityGroups:
         - Ref: SSHSecurityGroup
         - Ref: WebSecurityGroup
+      config:
+        files:
+          "/database.json":
+            content:
+              Fn::Join:
+              - '{ '
+              - '"dbname": "'
+              - Ref: DBName
+              - '", '
+              - '  "dbusername": "'
+              - Ref: DBUsername
+              - '", '
+              - '  "dbpassword": "'
+              - Ref: DBPassword
+              - '", '
+              - '  "dbendpoint": "'
+              - Fn::GetAtt:
+                - MySQLDatabase
+                - Endpoint.Address
+              - '"'
+              - ' }'
+            mode: '000644'
+            owner: root
+            group: root
       UserData:
         Fn::Base64: |
           #!/bin/bash
@@ -76,6 +102,16 @@ Resources:
           ToPort: 8080
           CidrIp: 0.0.0.0/0
 
+  DBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 0.0.0.0/0
+
   MyDBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -83,9 +119,14 @@ Resources:
       AllocatedStorage: 20
       Engine: mysql
       DBInstanceIdentifier: stackdb
-      MasterUsername: adminadmin
-      MasterUserPassword: passpass
-      DBName: pongdb
+      DBName:
+        Ref: DBName
+      MasterUsername:
+        Ref: DBUsername
+      MasterUserPassword:
+        Ref: DBPassword
+      SecurityGroups:
+        - Ref: DBSecurityGroup
 
 Outputs:
   DBEndpoint:

@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  KeyPairName:
+    Type: String
+    Default: Capstone
+    Description: Name of the EC2 Key Pair
+
+Resources:
+  MyEC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: "/"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess'
+
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: "/"
+      Roles:
+        - Ref: MyEC2Role
+
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0133fb3dded749b65
+      InstanceType: t2.nano
+      IamInstanceProfile:
+        Ref: EC2InstanceProfile
+      KeyName: 
+        Ref: KeyPairName
+      SecurityGroups:
+        - Ref: SSHSecurityGroup
+        - Ref: WebSecurityGroup
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y curl wget file tar bzip2 gzip unzip bsdmainutils python3 python3-pip util-linux ca-certificates binutils bc jq tmux netcat           
+          wget https://github.com/Cbthrasher/Capstone/archive/refs/heads/main.zip
+          unzip main.zip
+          ls -al   # Add this line to see the contents of the current directory
+          cd Capstone-main
+          pip3 install PySimpleGUIWeb mysql.connector Keyboard
+          pip3 install --upgrade remi
+          python3 pong_game.py
+
+  SSHSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  WebSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  MyDBInstance:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: 20
+      Engine: mysql
+      DBInstanceIdentifier: stackdb
+      MasterUsername: adminadmin
+      MasterUserPassword: passpass
+      DBName: pongdb
+
+Outputs:
+  DBEndpoint:
+    Description: "Database endpoint"
+    Value: 
+      Fn::GetAtt: [MyDBInstance, Endpoint.Address]

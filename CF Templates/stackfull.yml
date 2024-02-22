@@ -104,14 +104,12 @@ Resources:
           CidrIp: 0.0.0.0/0
 
   DBSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
+    Type: 'AWS::RDS::DBSecurityGroup'
     Properties:
       GroupDescription: Enable HTTP access
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          CidrIp: 0.0.0.0/0
+      DBSecurityGroupIngress:
+        - EC2SecurityGroupName:
+            Ref: WebSecurityGroup
 
   MySQLDatabase:
     Type: 'AWS::RDS::DBInstance'
@@ -126,7 +124,7 @@ Resources:
         Ref: DBUsername
       MasterUserPassword:
         Ref: DBPassword
-      SecurityGroups:
+      DBSecurityGroups:
         - Ref: DBSecurityGroup
 
 Outputs:

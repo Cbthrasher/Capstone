@@ -133,4 +133,4 @@ Outputs:
   DBEndpoint:
     Description: "Database endpoint"
     Value: 
-      Fn::GetAtt: [MyDBInstance, Endpoint.Address]
+      Fn::GetAtt: [MySQLDatabase, Endpoint.Address]

@@ -50,22 +50,23 @@ Resources:
           "/database.json":
             content:
               Fn::Join:
-              - '{ '
-              - '"dbname": "'
-              - Ref: DBName
-              - '", '
-              - '  "dbusername": "'
-              - Ref: DBUsername
-              - '", '
-              - '  "dbpassword": "'
-              - Ref: DBPassword
-              - '", '
-              - '  "dbendpoint": "'
-              - Fn::GetAtt:
-                - MySQLDatabase
-                - Endpoint.Address
-              - '"'
-              - ' }'
+              - ""
+              - - '{ '
+                - '"dbname": "'
+                - Ref: DBName
+                - '", '
+                - '  "dbusername": "'
+                - Ref: DBUsername
+                - '", '
+                - '  "dbpassword": "'
+                - Ref: DBPassword
+                - '", '
+                - '  "dbendpoint": "'
+                - Fn::GetAtt:
+                  - MySQLDatabase
+                  - Endpoint.Address
+                - '"'
+                - ' }'
             mode: '000644'
             owner: root
             group: root
@@ -112,7 +113,7 @@ Resources:
           ToPort: 3306
           CidrIp: 0.0.0.0/0
 
-  MyDBInstance:
+  MySQLDatabase:
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBInstanceClass: db.t2.micro

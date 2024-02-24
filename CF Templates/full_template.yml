@@ -1,16 +1,52 @@
 AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  KeyPairName:
+    Type: String
+    Default: Capstone
+    Description: Name of the EC2 Key Pair
+  DBName:
+    Description: The database name
+    Type: String
+    Default: pongdb
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric
+      characters.
+  DBUsername:
+    Description: The database admin account username
+    Type: String
+    Default: adminadmin
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric
+      characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: The database admin account password
+    Type: String
+    Default: passpass
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: must contain only alphanumeric characters.
+
+
 Resources:
   MyEC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: ami-0133fb3dded749b65
       InstanceType: t2.nano
-      KeyName: Capstone
+      KeyName:
+        Ref: KeyPairName
       SecurityGroups:
-        - !Ref SSHSecurityGroup
-        - !Ref WebSecurityGroup
+        - Ref: SSHSecurityGroup
+        - Ref: WebSecurityGroup
       UserData:
-        Fn::Base64: |
+        Fn::Base64: !Sub |
           #!/bin/bash
           apt-get update
           apt-get install -y curl wget file tar bzip2 gzip unzip bsdmainutils python3 python3-pip util-linux ca-certificates binutils bc jq tmux netcat           
@@ -18,12 +54,15 @@ Resources:
           unzip main.zip
           ls -al   # Add this line to see the contents of the current directory
           cd Capstone-main
+          cat << EOF > database.json
+          {"dbname": "${DBName}", "dbusername": "${DBUsername}", "dbpassword": "${DBPassword}", "dbendpoint": "${MySQLDatabase.Endpoint.Address}"}
+          EOF
           pip3 install PySimpleGUIWeb mysql.connector Keyboard
           pip3 install --upgrade remi
           python3 pong_game.py
 
   SSHSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access
       SecurityGroupIngress:
@@ -31,18 +70,43 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
+
   WebSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: Enable SSH access
+      GroupDescription: Enable HTTP access
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
           CidrIp: 0.0.0.0/0
-          
+
+  DBSecurityGroup:
+    Type: 'AWS::RDS::DBSecurityGroup'
+    Properties:
+      GroupDescription: Enable HTTP access
+      DBSecurityGroupIngress:
+        - EC2SecurityGroupName:
+            Ref: WebSecurityGroup
+
+  MySQLDatabase:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: 20
+      Engine: mysql
+      DBInstanceIdentifier: stackdb
+      DBName:
+        Ref: DBName
+      MasterUsername:
+        Ref: DBUsername
+      MasterUserPassword:
+        Ref: DBPassword
+      DBSecurityGroups:
+        - Ref: DBSecurityGroup
 
 Outputs:
-  InstanceId:
-    Description: "InstanceId of the newly created EC2 instance"
-    Value: !Ref MyEC2Instance
+  DBEndpoint:
+    Description: "Database endpoint"
+    Value:
+      Fn::GetAtt: [MySQLDatabase, Endpoint.Address]

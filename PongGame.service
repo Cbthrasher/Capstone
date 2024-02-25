@@ -1,0 +1,10 @@
+[Unit]
+Description=Pong Game
+After=multi-user.target
+[Service]
+Type=simple
+Restart=always
+WorkingDirectory
+ExecStart=/usr/bin/python3 /Capstone-main/pong_game.py
+[Install]
+WantedBy=multi-user.target

@@ -18,11 +18,11 @@ dbinfo = json.load(open('./database.json'))
 def goto_menu(window):
     window['-MAIN_MENU-'].Visible=True
     window['-GAME-'].Visible=False
-    
+
 def create_db_connection():
     try:
         connection = mysql.connector.connect(
-            host=dbinfo['dbendpoint'],  
+            host=dbinfo['dbendpoint'],
             database=dbinfo['dbname'],
             user=dbinfo['dbusername'],
             password=dbinfo['dbpassword']
@@ -30,10 +30,10 @@ def create_db_connection():
         return connection
     except Error as e:
         print("Error while connecting to MySQL", e)
-        
+
 def create_leaderboard_table():
     connectiond = create_db_connection()
-    
+
     if connectiond and connectiond.is_connected():
             cursor = connectiond.cursor()
             create_table_query = """
@@ -48,13 +48,13 @@ def create_leaderboard_table():
             print("Leaderboard table is created successfully")
 
 def update_leaderboard(winner_name):
-    
+
     create_leaderboard_table()
-    
+
     connection = create_db_connection()
     if connection and connection.is_connected():
         cursor = connection.cursor()
-        
+
         # Check if the winner is already in the leaderboard
         cursor.execute("SELECT score FROM leaderboard WHERE name = %s", (winner_name,))
         record = cursor.fetchone()
@@ -66,7 +66,7 @@ def update_leaderboard(winner_name):
         else:
             # Add new winner to the leaderboard
             cursor.execute("INSERT INTO leaderboard (name, score) VALUES (%s, 1)", (winner_name,))
-        
+
         connection.commit()
 
         # Fetch updated leaderboard
@@ -76,6 +76,6 @@ def update_leaderboard(winner_name):
         cursor.close()
         connection.close()
 
-        return [f"{name}: {score}" for name, name, score in leaderboard_data]
+        return [f"{name}: {score}" for name, score in leaderboard_data]
     else:
         return []

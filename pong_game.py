@@ -41,7 +41,7 @@ def pong():
            sg.Column(inner_layout, key='-GAME-'), sg.Column(leaderboard_layout, key='-LEADERBORD-')]]
 
     # , web_update_interval=0.1
-    window = sg.Window('Pong', layout, finalize=True, use_default_focus=False, web_port=8080, web_ip="0.0.0.0", web_debug=True, web_start_browser=False, return_keyboard_events=True, return_key_down_events=True, multiple_instance=True)
+    window = sg.Window('Pong', layout, finalize=True, use_default_focus=False, web_port=8080, web_ip="0.0.0.0", web_debug=True, web_start_browser=False, return_keyboard_events=True, return_key_down_events=True)
 
     graph_elem = window['-GRAPH-']
 
